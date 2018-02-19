@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow xmlns="http://www.springframework.org/schema/webflow"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/webflow
+							http://www.springframework.org/schema/webflow/spring-webflow.xsd">
+
+ 	<var name="assessment" class="edu.mum.exam.controller.flow.AssessmentWrapper" />
+ 
+ 	<decision-state id="checkExamId">
+ 		<if test="requestParameters.examId != null" then="createAssessment" else="finish"/>
+ 	</decision-state>
+ 	
+ 	<action-state id="createAssessment">
+ 		<evaluate expression="assessmentFlowHelper.createAssessment(requestParameters.examId)" 
+ 			result="assessment"/>
+ 		<transition to="answerQuestion"/>
+ 		<transition to="finish" on-exception="edu.mum.exam.exception.ExamNotFoundException"/>
+	</action-state>
+ 	
+	<view-state id="answerQuestion" model="assessment" view="assessment/answerQuestion">
+		<transition on="next" to="nextQuestion"/>
+		<transition on="previous" to="previousQuestion"/>
+		<transition on="cancel" to="finish"/>
+		<transition on="finish" to="saveAssessment"/>
+	</view-state>
+    
+	<decision-state id="nextQuestion">
+		<if test="assessment.nextAnswer()" then="answerQuestion" else="saveAssessment" />
+	</decision-state>
+	<decision-state id="previousQuestion">
+		<if test="assessment.previousAnswer()" then="answerQuestion" else="abort"/>
+	</decision-state>	
+	
+	<action-state id="saveAssessment">
+		<evaluate expression="assessmentFlowHelper.saveAssessment(assessment)" />
+		<transition to="finish"/>
+	</action-state>		
+	
+	<end-state id="finish" view="externalRedirect:/assessments/"/>
+	
+</flow>
